@@ -1,0 +1,547 @@
+{
+  "info": {
+    "name": "八字排盘 API",
+    "description": "bazi-paipan 全部 API 端点集合。\n\n环境变量：\n- `base_url` — 部署地址（本地 http://localhost:5000 / 线上 https://thewher.pythonanywhere.com）\n- `password` — 深度分析密码（若 config.local.py 中配置了 WEB_PASSWORD）\n\n验盘流程：paipan → analyze（验盘）→ verify → continue（正式批断）",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "排盘",
+      "item": [
+        {
+          "name": "POST /api/paipan — 公历排盘",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"包含四柱\", () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.pillars).to.be.an('object');",
+                  "    pm.expect(data.pillars.year.gz).to.be.a('string');",
+                  "    pm.expect(data.pillars.month.gz).to.be.a('string');",
+                  "    pm.expect(data.pillars.day.gz).to.be.a('string');",
+                  "    pm.expect(data.pillars.hour.gz).to.be.a('string');",
+                  "    pm.environment.set('plate_json', JSON.stringify(data));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2005,\n  \"month\": 8,\n  \"day\": 19,\n  \"hour\": 1,\n  \"minute\": 35,\n  \"gender\": \"男\",\n  \"longitude\": 113.75,\n  \"location\": \"东莞\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/paipan",
+              "host": ["{{base_url}}"],
+              "path": ["api", "paipan"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/paipan — 农历排盘",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"农历转换正确\", () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.is_lunar).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2005,\n  \"month\": 7,\n  \"day\": 15,\n  \"hour\": 1,\n  \"minute\": 35,\n  \"gender\": \"男\",\n  \"longitude\": 113.75,\n  \"location\": \"东莞\",\n  \"is_lunar\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/paipan",
+              "host": ["{{base_url}}"],
+              "path": ["api", "paipan"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/paipan — 真太阳时排盘（喀什，大型校正）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"真太阳时已应用\", () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.solar_adjusted.applied).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2005,\n  \"month\": 8,\n  \"day\": 19,\n  \"hour\": 10,\n  \"minute\": 0,\n  \"gender\": \"男\",\n  \"longitude\": 75.99,\n  \"location\": \"喀什\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/paipan",
+              "host": ["{{base_url}}"],
+              "path": ["api", "paipan"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "地理编码",
+      "item": [
+        {
+          "name": "GET /api/cities?q= — 城市模糊搜索",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"返回数组\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/cities?q=深圳",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cities"],
+              "query": [{"key": "q", "value": "深圳"}]
+            }
+          }
+        },
+        {
+          "name": "GET /api/geocode?q= — 精确地理编码",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"包含经纬度\", () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.longitude).to.be.a('number');",
+                  "    pm.expect(data.latitude).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/geocode?q=北京",
+              "host": ["{{base_url}}"],
+              "path": ["api", "geocode"],
+              "query": [{"key": "q", "value": "北京"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI 分析",
+      "item": [
+        {
+          "name": "POST /api/analyze — 验盘阶段",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 or 403\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403]));",
+                  "pm.test(\"返回 messages 数组\", () => {",
+                  "    if (pm.response.code === 200) {",
+                  "        const data = pm.response.json();",
+                  "        pm.expect(data.messages).to.be.an('array');",
+                  "        pm.environment.set('conv_messages', JSON.stringify(data.messages));",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2005,\n  \"month\": 8,\n  \"day\": 19,\n  \"hour\": 1,\n  \"minute\": 35,\n  \"gender\": \"男\",\n  \"longitude\": 113.75,\n  \"location\": \"东莞\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analyze"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/analyze/continue — 续接批断",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"返回 assistant 消息\", () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.reply).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"\"},\n    {\"role\": \"user\", \"content\": \"请分析此八字\"},\n    {\"role\": \"assistant\", \"content\": \"【验盘阶段输出...】\"}\n  ],\n  \"reply\": \"确认验盘正确，请继续完整分析\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analyze/continue",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analyze", "continue"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/analyze/stream — 流式验盘（SSE）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"SSE 流返回\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403]));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "text/event-stream"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2005,\n  \"month\": 8,\n  \"day\": 19,\n  \"hour\": 1,\n  \"minute\": 35,\n  \"gender\": \"男\",\n  \"longitude\": 113.75,\n  \"location\": \"东莞\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analyze/stream",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analyze", "stream"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "图表",
+      "item": [
+        {
+          "name": "POST /api/chart/wuxing — 五行环图",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"SVG 返回\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.text()).to.include('<svg');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"wuxing\": {\"木\": 3, \"火\": 1, \"土\": 2, \"金\": 3, \"水\": 1}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/chart/wuxing",
+              "host": ["{{base_url}}"],
+              "path": ["api", "chart", "wuxing"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/chart/changsheng — 十二长生轮盘",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"SVG 返回\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.text()).to.include('<svg');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pillars\": {\n    \"year\": {\"gan\": \"乙\", \"zhi\": \"酉\"},\n    \"month\": {\"gan\": \"甲\", \"zhi\": \"申\"},\n    \"day\": {\"gan\": \"乙\", \"zhi\": \"亥\"},\n    \"hour\": {\"gan\": \"丁\", \"zhi\": \"丑\"}\n  },\n  \"ri_gan\": \"乙\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/chart/changsheng",
+              "host": ["{{base_url}}"],
+              "path": ["api", "chart", "changsheng"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/chart/dayun — 大运时间轴",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"SVG 返回\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.text()).to.include('<svg');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dayun\": [\n    {\"gz\": \"癸未\", \"start_year\": 2008, \"start_age\": 3.66},\n    {\"gz\": \"壬午\", \"start_year\": 2018, \"start_age\": 13.66},\n    {\"gz\": \"辛巳\", \"start_year\": 2028, \"start_age\": 23.66}\n  ],\n  \"ri_gan\": \"乙\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/chart/dayun",
+              "host": ["{{base_url}}"],
+              "path": ["api", "chart", "dayun"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/chart/dayun-ring — 大运环图",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"SVG 返回\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.text()).to.include('<svg');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dayun\": [\n    {\"gz\": \"癸未\", \"start_year\": 2008, \"start_age\": 3.66},\n    {\"gz\": \"壬午\", \"start_year\": 2018, \"start_age\": 13.66},\n    {\"gz\": \"辛巳\", \"start_year\": 2028, \"start_age\": 23.66}\n  ],\n  \"ri_gan\": \"乙\",\n  \"current_age\": 21\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/chart/dayun-ring",
+              "host": ["{{base_url}}"],
+              "path": ["api", "chart", "dayun-ring"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "反馈",
+      "item": [
+        {
+          "name": "POST /api/verify — 提交验盘反馈",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"返回 success\", () => {",
+                  "    pm.expect(pm.response.json().success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"feedback_file\": \"20260706_120000_乙_1234.json\",\n  \"predictions\": [\n    {\"index\": 0, \"label\": \"correct\", \"user_note\": \"确实如此\"},\n    {\"index\": 1, \"label\": \"wrong\", \"user_note\": \"年份不对\"}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "verify"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/feedback/list — 反馈日志摘要",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"返回数组\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/feedback/list?limit=10&verified_only=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "feedback", "list"],
+              "query": [
+                {"key": "limit", "value": "10"},
+                {"key": "verified_only", "value": "1"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "工具",
+      "item": [
+        {
+          "name": "GET /api/network-info — 网络信息",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/network-info",
+              "host": ["{{base_url}}"],
+              "path": ["api", "network-info"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/pdf — PDF 报告",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"PDF 或 500\", () => pm.expect(pm.response.code).to.be.oneOf([200, 500]));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2005,\n  \"month\": 8,\n  \"day\": 19,\n  \"hour\": 1,\n  \"minute\": 35,\n  \"gender\": \"男\",\n  \"longitude\": 113.75,\n  \"location\": \"东莞\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "pdf"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
