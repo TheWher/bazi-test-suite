@@ -1,0 +1,7 @@
+pytest>=8.0
+pytest-html>=4.0
+pytest-timeout>=2.0
+flask>=3.0
+fpdf2>=2.7
+requests>=2.31
+zhdate>=0.1

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+reports/*
+!reports/.gitkeep
+.venv/
+venv/
+.env
+bazi-paipan/
